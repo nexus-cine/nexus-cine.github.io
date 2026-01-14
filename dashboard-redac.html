@@ -20,13 +20,14 @@
         .card-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #eee; }
         .card-body { padding: 15px; }
         .btn-delete { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
+        #status { font-size: 0.7rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <nav>
         <a href="index.html" class="logo">NEXUS / CINEDOC</a>
-        <div id="status" style="font-size: 0.7rem; color: #aaa;">Chargement de votre session...</div>
+        <div id="status">Chargement...</div>
     </nav>
 
     <div class="container">
@@ -52,32 +53,49 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function loadDocs() {
-            const res = await fetch('https://api.ipify.org?format=json');
-            const userIP = (await res.json()).ip;
-            document.getElementById('status').innerText = "Connecté via : " + userIP;
+        async function hashIP(ip) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(ip);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-            const q = query(collection(db, "cinedocs"), where("authorIP", "==", userIP));
-            const snap = await getDocs(q);
-            
-            snap.forEach(d => {
-                const data = d.data();
-                const card = document.createElement('div');
-                card.className = 'doc-card';
-                card.innerHTML = `
-                    <button class="btn-delete" onclick="delDoc('${d.id}')">×</button>
-                    <img src="${data.image || ''}" class="card-img">
-                    <div class="card-body">
-                        <div style="font-size:0.7rem; color:red; font-weight:bold;">${data.genres ? data.genres.join(' ') : ''}</div>
-                        <h3 style="margin:5px 0;">${data.title}</h3>
-                        <p style="font-size:0.8rem; color:#666;">${data.director || 'Inconnu'} (${data.year || ''})</p>
-                    </div>`;
-                document.getElementById('docsGrid').appendChild(card);
-            });
+        async function loadDocs() {
+            const status = document.getElementById('status');
+            const grid = document.getElementById('docsGrid');
+
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                const hashedKey = await hashIP(data.ip);
+
+                // On filtre par la clé anonyme
+                const q = query(collection(db, "cinedocs"), where("authorKey", "==", hashedKey));
+                const snap = await getDocs(q);
+                
+                snap.forEach(d => {
+                    const docData = d.data();
+                    const card = document.createElement('div');
+                    card.className = 'doc-card';
+                    card.innerHTML = `
+                        <button class="btn-delete" onclick="delDoc('${d.id}')">×</button>
+                        <img src="${docData.image || ''}" class="card-img">
+                        <div class="card-body">
+                            <div style="font-size:0.7rem; color:red; font-weight:bold;">${docData.genres ? docData.genres.join(' ') : ''}</div>
+                            <h3 style="margin:5px 0;">${docData.title}</h3>
+                            <p style="font-size:0.8rem; color:#666;">${docData.director || ''} (${docData.year || ''})</p>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+                status.innerText = "Session Sécurisée";
+            } catch (e) {
+                status.innerText = "Erreur de connexion";
+            }
         }
 
         window.delDoc = async (id) => {
-            if(confirm("Voulez-vous supprimer ce document ?")) {
+            if(confirm("Supprimer ce document ?")) {
                 await deleteDoc(doc(db, "cinedocs", id));
                 location.reload();
             }
