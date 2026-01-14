@@ -15,12 +15,20 @@
         .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
         .new-doc-btn { border: 2px dashed #ccc; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px; cursor: pointer; text-decoration: none; color: #888; font-size: 3rem; transition: 0.3s; }
         .new-doc-btn:hover { border-color: var(--accent); color: var(--accent); background: #fffafa; }
-        .doc-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; transition: 0.3s; }
+        .doc-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; transition: 0.3s; display: flex; flex-direction: column; }
         .doc-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .card-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #eee; }
-        .card-body { padding: 15px; }
-        .btn-delete { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
+        .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .btn-delete { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 2; }
         #status { font-size: 0.7rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* NOUVEAUX STYLES POUR BROUILLONS ET MODIFICATION */
+        .status-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; font-weight: 700; display: inline-block; margin-bottom: 10px; width: fit-content; }
+        .badge-brouillon { background: #f0f0f0; color: #666; }
+        .badge-publie { background: #e5f9e5; color: #28a745; border: 1px solid #d4edda; }
+        
+        .btn-edit { margin-top: auto; text-decoration: none; background: #1a1a1a; color: white; text-align: center; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+        .btn-edit:hover { background: var(--accent); }
     </style>
 </head>
 <body>
@@ -70,7 +78,6 @@
                 const data = await res.json();
                 const hashedKey = await hashIP(data.ip);
 
-                // On filtre par la clé anonyme
                 const q = query(collection(db, "cinedocs"), where("authorKey", "==", hashedKey));
                 const snap = await getDocs(q);
                 
@@ -78,24 +85,37 @@
                     const docData = d.data();
                     const card = document.createElement('div');
                     card.className = 'doc-card';
+                    
+                    // Gestion du badge de statut
+                    const isPublie = docData.status === 'publie';
+                    const badgeClass = isPublie ? 'badge-publie' : 'badge-brouillon';
+                    const badgeText = isPublie ? 'PUBLIÉ' : 'BROUILLON';
+
                     card.innerHTML = `
-                        <button class="btn-delete" onclick="delDoc('${d.id}')">×</button>
+                        <button class="btn-delete" onclick="window.delDoc('${d.id}')">×</button>
                         <img src="${docData.image || ''}" class="card-img">
                         <div class="card-body">
-                            <div style="font-size:0.7rem; color:red; font-weight:bold;">${docData.genres ? docData.genres.join(' ') : ''}</div>
-                            <h3 style="margin:5px 0;">${docData.title}</h3>
-                            <p style="font-size:0.8rem; color:#666;">${docData.director || ''} (${docData.year || ''})</p>
+                            <span class="status-badge ${badgeClass}">${badgeText}</span>
+                            <div style="font-size:0.7rem; color:red; font-weight:bold; margin-bottom:5px;">
+                                ${docData.genres ? docData.genres.join(' ') : ''}
+                            </div>
+                            <h3 style="margin:0 0 5px 0; font-size:1.1rem;">${docData.title}</h3>
+                            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">
+                                ${docData.director || ''} ${docData.year ? '('+docData.year+')' : ''}
+                            </p>
+                            <a href="redaction.html?id=${d.id}" class="btn-edit">Modifier / Continuer</a>
                         </div>`;
                     grid.appendChild(card);
                 });
                 status.innerText = "Session Sécurisée";
             } catch (e) {
                 status.innerText = "Erreur de connexion";
+                console.error(e);
             }
         }
 
         window.delDoc = async (id) => {
-            if(confirm("Supprimer ce document ?")) {
+            if(confirm("Supprimer définitivement ce document ?")) {
                 await deleteDoc(doc(db, "cinedocs", id));
                 location.reload();
             }
