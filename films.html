@@ -10,7 +10,7 @@
         :root { --bg: #ffffff; --text: #111; --accent: #e50914; --border: #eee; }
         body { margin: 0; font-family: 'Inter', sans-serif; color: var(--text); background: var(--bg); }
         
-        header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); sticky; top: 0; background: white; z-index: 1000; }
+        header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white; z-index: 1000; }
         .main-logo { height: 60px; width: auto; }
         nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
         nav li { margin-left: 25px; }
@@ -20,9 +20,10 @@
         .page-header { text-align: center; margin-bottom: 60px; }
         .page-header h1 { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 10px; }
         
-        /* --- GRILLE DE FILMS --- */
         .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px; }
-        .movie-card { text-decoration: none; color: inherit; transition: 0.3s; }
+        .movie-card { text-decoration: none; color: inherit; transition: 0.3s; opacity: 0; transform: translateY(20px); animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        
         .movie-card:hover { transform: translateY(-10px); }
         .poster { width: 100%; aspect-ratio: 2/3; background: #eee; border-radius: 8px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .movie-info h3 { font-family: 'Playfair Display', serif; margin: 15px 0 5px; font-size: 1.2rem; }
@@ -49,17 +50,60 @@
             <p>La sélection pointue de l'équipe Nexus.</p>
         </div>
 
-        <div class="movie-grid">
-            <a href="#" class="movie-card">
-                <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925" class="poster">
-                <div class="movie-info">
-                    <span class="tag">Drame</span>
-                    <h3>Le Nom du Film</h3>
-                    <p>Réalisé par Nom du Réal</p>
-                </div>
-            </a>
+        <div class="movie-grid" id="movieGrid">
             </div>
     </main>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDE71GtieeUYTR86jUGpRVh0-qTjx5a-c",
+            authDomain: "nexuscine-68607.firebaseapp.com",
+            projectId: "nexuscine-68607",
+            storageBucket: "nexuscine-68607.firebasestorage.app",
+            messagingSenderId: "256917505083",
+            appId: "1:256917505083:web:f1608ef459ee5b9178481e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadMovies() {
+            const grid = document.getElementById('movieGrid');
+            try {
+                // On récupère uniquement les articles dont le statut est "publie"
+                const q = query(collection(db, "cinedocs"), where("status", "==", "publie"));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    grid.innerHTML = "<p style='text-align:center; width:100%; color:#888;'>Aucune recommandation pour le moment.</p>";
+                    return;
+                }
+
+                snap.forEach(d => {
+                    const movie = d.data();
+                    const card = document.createElement('a');
+                    card.href = `lecture.html?id=${d.id}`;
+                    card.className = 'movie-card';
+                    
+                    card.innerHTML = `
+                        <img src="${movie.image || 'https://via.placeholder.com/400x600'}" class="poster">
+                        <div class="movie-info">
+                            <span class="tag">${movie.genres && movie.genres.length > 0 ? movie.genres[0] : 'Cinéma'}</span>
+                            <h3>${movie.title}</h3>
+                            <p>Réalisé par ${movie.director || 'Inconnu'}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                console.error("Erreur :", e);
+            }
+        }
+
+        loadMovies();
+    </script>
 </body>
 </html>
