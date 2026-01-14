@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINEDOC | Espace Rédacteur</title>
+    <link rel="icon" type="image/png" href="NEXUS.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #fdfdfd; --text: #1a1a1a; --accent: #e50914; --border: #eee; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+        /* --- NAVIGATION ZEN --- */
+        nav.zen-nav { padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: white; }
+        .logo-cinedoc { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.2rem; color: var(--accent); text-decoration: none; }
+        .status { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- EDITOR LAYOUT --- */
+        .editor-container { max-width: 900px; margin: 60px auto; padding: 0 20px; }
+        
+        /* Dropzone Image */
+        .image-upload { width: 100%; height: 350px; border: 2px dashed #ccc; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fafafa; cursor: pointer; transition: 0.3s; overflow: hidden; position: relative; }
+        .image-upload:hover { border-color: var(--accent); background: #fff5f5; }
+        .image-upload img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
+        .image-upload p { color: #888; pointer-events: none; }
+
+        /* Inputs */
+        input.title-input { width: 100%; border: none; background: transparent; font-family: 'Playfair Display', serif; font-size: 3.5rem; margin-top: 40px; outline: none; font-weight: 700; }
+        input.title-input::placeholder { color: #eee; }
+
+        .meta-row { display: flex; gap: 20px; margin: 30px 0; padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        select, input.meta-input { border: 1px solid #ddd; padding: 10px; border-radius: 6px; font-family: 'Inter'; font-size: 0.9rem; outline: none; }
+
+        /* Zones de texte */
+        .writing-area { width: 100%; border: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 1.1rem; line-height: 1.8; outline: none; resize: none; min-height: 400px; }
+
+        /* Boutons */
+        .floating-actions { position: fixed; bottom: 30px; right: 30px; display: flex; gap: 10px; }
+        .btn { padding: 12px 25px; border-radius: 50px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-save { background: #111; color: white; }
+        .btn-publish { background: var(--accent); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <nav class="zen-nav">
+        <a href="index.html" class="logo-cinedoc">NEXUS / CINEDOC</a>
+        <div class="status">Mode Rédaction • Brouillon</div>
+    </nav>
+
+    <div class="editor-container">
+        <div class="image-upload" onclick="document.getElementById('file-input').click()">
+            <p>📸 Cliquez ou Glissez l'affiche du film ici</p>
+            <input type="file" id="file-input" hidden onchange="previewImage(this)">
+            <img id="preview" src="" alt="Affiche">
+        </div>
+
+        <input type="text" class="title-input" placeholder="Titre du film...">
+
+        <div class="meta-row">
+            <select id="genre">
+                <option value="">Choisir un genre...</option>
+                <option value="drame">Drame</option>
+                <option value="sci-fi">Science-Fiction</option>
+                <option value="thriller">Thriller</option>
+                <option value="animation">Animation</option>
+                <option value="horreur">Horreur</option>
+            </select>
+            <input type="text" class="meta-input" placeholder="Réalisateur...">
+            <input type="number" class="meta-input" placeholder="Année" min="1895" max="2026">
+        </div>
+
+        <textarea class="writing-area" placeholder="Pourquoi recommandez-vous ce film ? Partagez votre analyse..."></textarea>
+    </div>
+
+    <div class="floating-actions">
+        <button class="btn btn-save">Enregistrer Brouillon</button>
+        <button class="btn btn-publish">Soumettre à Nexus</button>
+    </div>
+
+    <script>
+        function previewImage(input) {
+            const preview = document.getElementById('preview');
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onloadend = function() {
+                preview.src = reader.result;
+                preview.style.display = 'block';
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+
+</body>
+</html>
