@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS CINE | Recommandations Films</title>
+    <link rel="icon" type="image/png" href="NEXUS.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #ffffff; --text: #111; --accent: #e50914; --border: #eee; }
+        body { margin: 0; font-family: 'Inter', sans-serif; color: var(--text); background: var(--bg); }
+        
+        header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); sticky; top: 0; background: white; z-index: 1000; }
+        .main-logo { height: 60px; width: auto; }
+        nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
+        nav li { margin-left: 25px; }
+        nav a { text-decoration: none; color: var(--text); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+
+        .container { padding: 60px 5%; max-width: 1200px; margin: 0 auto; }
+        .page-header { text-align: center; margin-bottom: 60px; }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 10px; }
+        
+        /* --- GRILLE DE FILMS --- */
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px; }
+        .movie-card { text-decoration: none; color: inherit; transition: 0.3s; }
+        .movie-card:hover { transform: translateY(-10px); }
+        .poster { width: 100%; aspect-ratio: 2/3; background: #eee; border-radius: 8px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .movie-info h3 { font-family: 'Playfair Display', serif; margin: 15px 0 5px; font-size: 1.2rem; }
+        .movie-info p { font-size: 0.85rem; color: #666; margin: 0; }
+        .tag { display: inline-block; background: var(--accent); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-top: 10px; text-transform: uppercase; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html"><img src="NEXUS-transparent.png" alt="NEXUS CINE" class="main-logo"></a>
+        <nav>
+            <ul>
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="index.html#news">Actualités</a></li>
+                <li><a href="films.html" style="color: var(--accent);">Films</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Recommandations Films</h1>
+            <p>La sélection pointue de l'équipe Nexus.</p>
+        </div>
+
+        <div class="movie-grid">
+            <a href="#" class="movie-card">
+                <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925" class="poster">
+                <div class="movie-info">
+                    <span class="tag">Drame</span>
+                    <h3>Le Nom du Film</h3>
+                    <p>Réalisé par Nom du Réal</p>
+                </div>
+            </a>
+            </div>
+    </main>
+
+</body>
+</html>
