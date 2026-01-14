@@ -10,7 +10,7 @@
         :root { --bg: #ffffff; --text: #111; --accent: #e50914; --border: #eee; --gray: #f9f9f9; }
         body { margin: 0; font-family: 'Inter', sans-serif; color: var(--text); background: var(--bg); }
         
-        /* --- NAVIGATION (Style Accueil) --- */
+        /* --- NAVIGATION (Identique Accueil) --- */
         header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white; z-index: 1000; }
         .logo-link { display: flex; align-items: center; text-decoration: none; }
         .main-logo { height: 70px; width: auto; display: block; margin: 10px 0; transition: transform 0.3s ease; }
@@ -121,19 +121,29 @@
         let allMovies = [];
 
         async function fetchAll() {
-            const q = query(collection(db, "cinedocs"), where("status", "==", "publie"));
-            const snap = await getDocs(q);
-            allMovies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Tri initial par année (plus récent en haut)
-            render(allMovies);
+            try {
+                const q = query(collection(db, "cinedocs"), where("status", "==", "publie"));
+                const snap = await getDocs(q);
+                allMovies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // Au premier chargement : Limite à 9
+                render(allMovies, true);
+            } catch (e) {
+                console.error("Erreur Firebase :", e);
+            }
         }
 
-        function render(data) {
+        function render(data, limit9 = false) {
             const grid = document.getElementById('movieGrid');
             grid.innerHTML = "";
             
-            // Tri par année décroissante
-            const sorted = data.sort((a, b) => (b.year || 0) - (a.year || 0));
+            // On trie toujours par année décroissante (2025, 2024...)
+            let sorted = data.sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
+
+            // Si on est sur "Tous", on coupe après le 9ème
+            if (limit9) {
+                sorted = sorted.slice(0, 9);
+            }
 
             sorted.forEach(movie => {
                 const card = document.createElement('a');
@@ -144,7 +154,7 @@
                         <img src="${movie.image || 'https://via.placeholder.com/1600x900'}" class="poster">
                     </div>
                     <div class="movie-info">
-                        <span class="tag">${movie.genres ? movie.genres[0] : 'Cinéma'}</span>
+                        <span class="tag">${movie.genres && movie.genres.length > 0 ? movie.genres[0] : 'Cinéma'}</span>
                         <h3>${movie.title}</h3>
                         <p>${movie.director || 'Réalisateur inconnu'} • ${movie.year || 'N/A'}</p>
                     </div>
@@ -154,14 +164,16 @@
         }
 
         window.setFilter = (genre, btn) => {
+            // UI : Mise à jour des boutons
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             if(genre === 'Tous') {
-                render(allMovies);
+                render(allMovies, true); // On remet la limite
             } else {
+                // On filtre et on affiche TOUT sans limite pour le genre
                 const filtered = allMovies.filter(m => m.genres && m.genres.includes(genre));
-                render(filtered);
+                render(filtered, false);
             }
         };
 
