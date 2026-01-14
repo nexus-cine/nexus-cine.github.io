@@ -19,8 +19,25 @@
         }
         
         .logo-link { display: flex; align-items: center; text-decoration: none; }
-        .main-logo { height: 45px; width: auto; transition: transform 0.3s ease; }
-        .main-logo:hover { transform: scale(1.05); }
+/* --- AJUSTEMENT DU LOGO --- */
+.main-logo {
+    height: 70px; /* On augmente la taille ici (avant c'était 45px ou 50px) */
+    width: auto;
+    display: block;
+    margin: 10px 0; /* Ajoute un peu d'espace autour */
+    transition: transform 0.3s ease;
+}
+
+.main-logo:hover {
+    transform: scale(1.05); /* Effet de zoom sympa quand on passe la souris */
+}
+
+/* Ajustement pour mobile (si l'écran est petit) */
+@media (max-width: 768px) {
+    .main-logo {
+        height: 50px; /* Un peu plus petit sur téléphone pour pas prendre toute la place */
+    }
+}
 
         nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
         nav li { position: relative; margin-left: 25px; }
