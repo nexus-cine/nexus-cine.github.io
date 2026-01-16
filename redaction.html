@@ -12,10 +12,9 @@
         nav { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
         .back-btn { text-decoration: none; color: #888; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
         
-        /* Layout Principal */
         .editor-container { max-width: 800px; margin: 40px auto; padding: 0 20px 100px; transition: 0.3s; }
         
-        /* SIDEBAR IA FLOTTANTE (Fixe le problème de l'écran mangé) */
+        /* SIDEBAR IA FLOTTANTE */
         .ai-sidebar { 
             position: fixed; 
             right: 20px; 
@@ -36,7 +35,6 @@
         #ai-output { font-size: 0.8rem; line-height: 1.4; color: #444; background: #fff; padding: 10px; border-radius: 6px; min-height: 50px; white-space: pre-wrap; margin-top: 10px; border-top: 1px solid #eee; }
         .ai-loader { font-size: 0.7rem; color: #888; margin-top: 5px; display: none; font-style: italic; }
 
-        /* Styles existants */
         .image-dropzone { width: 100%; aspect-ratio: 16/9; border: 2px dashed #ddd; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f9f9f9; cursor: pointer; overflow: hidden; position: relative; }
         .image-dropzone img { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         .title-field { width: 100%; border: none; font-family: 'Playfair Display', serif; font-size: 3.5rem; margin-top: 30px; outline: none; font-weight: 700; background: transparent; }
@@ -113,8 +111,10 @@
     </div>
 
     <script type="module">
+        // Importations Firebase et Google AI
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBDE71GtieeUYTR86jUGpRVh0-qTjx5a-c",
@@ -127,13 +127,10 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('id');
-        let hashedKey = "";
-        let currentImageData = "";
 
-        // --- GESTION IA CORRIGÉE (Anti-undefined) ---
+        // --- CONFIGURATION IA DIRECTE ---
+        const genAI = new GoogleGenerativeAI("TA_CLE_API_GEMINI_ICI");
+
         window.askAI = async (type) => {
             const title = document.getElementById('docTitle').value;
             const content = document.getElementById('docContent').value;
@@ -142,46 +139,46 @@
 
             if(!title && type !== 'relire') return alert("Indiquez le titre du film.");
 
-            let prompt = "";
-            if(type === 'infos') prompt = `Réalisateur et année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
-            if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte sur le film "${title}".`;
-            if(type === 'style') prompt = `Analyse le style visuel du film "${title}" en 3 points courts.`;
-            if(type === 'relire') prompt = `Reformule ce texte de façon plus élégante : ${content}`;
-
             loader.style.display = "block";
-            output.style.opacity = "0.5";
-            output.innerText = "Réflexion en cours...";
+            output.innerText = "Nexus réfléchit...";
 
             try {
-                const res = await fetch("https://nexus-ai-n1ji.onrender.com/ask", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: prompt })
-                });
-                const data = await res.json();
-                
-                // Correction du undefined
-                if (data && data.text) {
-                    output.innerText = data.text;
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+                let prompt = "";
+                if(type === 'infos') prompt = `Réalisateur et année du film "${title}". Réponds STRICTEMENT au format : Réalisateur : [Nom], Année : [Année].`;
+                if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte et passionnante sur le film "${title}".`;
+                if(type === 'style') prompt = `Analyse le style visuel et la mise en scène du film "${title}" en 3 points courts.`;
+                if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus élégant et professionnel : ${content}`;
+
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
+
+                if (text) {
+                    output.innerText = text;
                     
                     if(type === 'infos') {
-                        const matchReal = data.text.match(/Réalisateur\s*:\s*([^,\n]*)/i);
-                        const matchAnnee = data.text.match(/Année\s*:\s*(\d{4})/);
+                        const matchReal = text.match(/Réalisateur\s*:\s*([^,\n]*)/i);
+                        const matchAnnee = text.match(/Année\s*:\s*(\d{4})/);
                         if(matchReal) document.getElementById('docDirector').value = matchReal[1].trim();
                         if(matchAnnee) document.getElementById('docYear').value = matchAnnee[1];
                     }
-                } else {
-                    output.innerText = "Désolé, je n'ai pas trouvé de réponse.";
                 }
             } catch (e) {
-                output.innerText = "Serveur en pause. Réessayez dans 10 secondes.";
+                console.error(e);
+                output.innerText = "Erreur : Impossible de contacter l'IA. Vérifie ta clé API.";
             } finally {
                 loader.style.display = "none";
-                output.style.opacity = "1";
             }
         };
 
-        // --- FIREBASE ET LOGIQUE ---
+        // --- RESTE DE LA LOGIQUE FIREBASE ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+        let hashedKey = "";
+        let currentImageData = "";
+
         async function hashIP(ip) {
             const encoder = new TextEncoder();
             const data = encoder.encode(ip);
