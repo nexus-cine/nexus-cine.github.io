@@ -130,55 +130,56 @@
         // --- CONFIGURATION IA DIRECTE (GEMINI 3 - 2026) ---
         const genAI = new GoogleGenerativeAI("AIzaSyB4vtr_0zkCNgfiLrpBCKzwK_FNSdqpDdE");
 
-        window.askAI = async (type) => {
-            const title = document.getElementById('docTitle').value;
-            const content = document.getElementById('docContent').value;
-            const output = document.getElementById('ai-output');
-            const loader = document.getElementById('ai-loader');
+     window.askAI = async (type) => {
+    const title = document.getElementById('docTitle').value;
+    const content = document.getElementById('docContent').value;
+    const output = document.getElementById('ai-output');
+    const loader = document.getElementById('ai-loader');
 
-            if(!title && type !== 'relire') return alert("Indiquez le titre du film.");
+    if(!title && type !== 'relire') return alert("Indiquez le titre du film.");
 
-            loader.style.display = "block";
-            output.innerText = "Nexus réfléchit...";
+    loader.style.display = "block";
+    output.innerText = "Nexus réfléchit...";
 
-            try {
-                // Utilisation du modèle Gemini 3 Flash pour 2026
-                const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+    try {
+        // ON UTILISE L'IDENTIFIANT TECHNIQUE STABLE (Le seul qui évite la 404)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-                let prompt = "";
-                if(type === 'infos') prompt = `Donne le réalisateur et l'année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
-                if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte sur le film "${title}".`;
-                if(type === 'style') prompt = `Analyse le style visuel de "${title}" en 3 points courts.`;
-                if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus professionnel : ${content}`;
+        let prompt = "";
+        if(type === 'infos') prompt = `Réalisateur et année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
+        if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte sur le film "${title}".`;
+        if(type === 'style') prompt = `Analyse le style visuel de "${title}" en 3 points courts.`;
+        if(type === 'relire') prompt = `Reformule ce texte de façon professionnelle : ${content}`;
 
-                const result = await model.generateContent(prompt);
-                const text = result.response.text();
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-                if (text) {
-                    output.innerText = text;
-                    
-                    if(type === 'infos') {
-                        const matchReal = text.match(/Réalisateur\s*:\s*([^,\n]*)/i);
-                        const matchAnnee = text.match(/Année\s*:\s*(\d{4})/);
-                        if(matchReal) document.getElementById('docDirector').value = matchReal[1].trim();
-                        if(matchAnnee) document.getElementById('docYear').value = matchAnnee[1];
-                    }
-                }
-            } catch (e) {
-                console.error("Erreur IA:", e);
-                // Fallback si Gemini 3 est en maintenance
-                output.innerText = "Nexus a rencontré une erreur. Réessai avec le canal de secours...";
-                try {
-                    const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-                    const fbResult = await fallbackModel.generateContent(prompt);
-                    output.innerText = fbResult.response.text();
-                } catch(e2) {
-                    output.innerText = "Service IA temporairement indisponible. Vérifiez votre clé API.";
-                }
-            } finally {
-                loader.style.display = "none";
+        if (text) {
+            output.innerText = text;
+            
+            if(type === 'infos') {
+                const matchReal = text.match(/Réalisateur\s*:\s*([^,\n]*)/i);
+                const matchAnnee = text.match(/Année\s*:\s*(\d{4})/);
+                if(matchReal) document.getElementById('docDirector').value = matchReal[1].trim();
+                if(matchAnnee) document.getElementById('docYear').value = matchAnnee[1];
             }
-        };
+        }
+    } catch (e) {
+        console.error("Détail de l'erreur :", e);
+        // Si gemini-1.5-flash échoue encore, on tente le tout pour le tout avec 'gemini-pro'
+        output.innerText = "Tentative sur canal secondaire...";
+        try {
+            const modelPro = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const resPro = await modelPro.generateContent(prompt);
+            output.innerText = resPro.response.text();
+        } catch(e2) {
+            output.innerText = "Erreur : Modèle introuvable. Vérifiez l'activation du modèle dans Google AI Studio.";
+        }
+    } finally {
+        loader.style.display = "none";
+    }
+};
 
         // --- LOGIQUE FIREBASE & INTERFACE ---
         const urlParams = new URLSearchParams(window.location.search);
