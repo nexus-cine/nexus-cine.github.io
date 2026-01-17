@@ -101,7 +101,7 @@
         <button class="ai-btn" onclick="askAI('style')">🎥 Analyse du style visuel</button>
         <button class="ai-btn" onclick="askAI('relire')">✍️ Améliorer mon texte</button>
         
-        <div id="ai-loader" class="ai-loader">Nexus réfléchit...</div>
+        <div id="ai-loader" class="ai-loader">Nexus (Gemini 3) réfléchit...</div>
         <div id="ai-output">Besoin d'un coup de main ?</div>
     </aside>
 
@@ -127,8 +127,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- CONFIGURATION IA DIRECTE ---
-        const genAI = new GoogleGenerativeAI("AIzaSyAc9PLbbR1Nqf2m0UKzD4uKQD9OJTsS8_s");
+        // --- CONFIGURATION IA DIRECTE (GEMINI 3 - 2026) ---
+        const genAI = new GoogleGenerativeAI("AIzaSyB4vtr_0zkCNgfiLrpBCKzwK_FNSdqpDdE");
 
         window.askAI = async (type) => {
             const title = document.getElementById('docTitle').value;
@@ -142,8 +142,8 @@
             output.innerText = "Nexus réfléchit...";
 
             try {
-                // Utilisation de la version 001 qui corrige l'erreur 404
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+                // Utilisation du modèle Gemini 3 Flash pour 2026
+                const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
                 let prompt = "";
                 if(type === 'infos') prompt = `Donne le réalisateur et l'année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
@@ -152,7 +152,7 @@
                 if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus professionnel : ${content}`;
 
                 const result = await model.generateContent(prompt);
-                const text = result.response.text(); // Simplifié ici
+                const text = result.response.text();
 
                 if (text) {
                     output.innerText = text;
@@ -166,7 +166,15 @@
                 }
             } catch (e) {
                 console.error("Erreur IA:", e);
-                output.innerText = "Erreur : " + e.message;
+                // Fallback si Gemini 3 est en maintenance
+                output.innerText = "Nexus a rencontré une erreur. Réessai avec le canal de secours...";
+                try {
+                    const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                    const fbResult = await fallbackModel.generateContent(prompt);
+                    output.innerText = fbResult.response.text();
+                } catch(e2) {
+                    output.innerText = "Service IA temporairement indisponible. Vérifiez votre clé API.";
+                }
             } finally {
                 loader.style.display = "none";
             }
