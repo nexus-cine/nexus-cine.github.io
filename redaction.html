@@ -111,7 +111,6 @@
     </div>
 
     <script type="module">
-        // Importations Firebase et Google AI
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
@@ -129,6 +128,7 @@
         const db = getFirestore(app);
 
         // --- CONFIGURATION IA DIRECTE ---
+        // Ta clé est maintenant intégrée
         const genAI = new GoogleGenerativeAI("AIzaSyAc9PLbbR1Nqf2m0UKzD4uKQD9OJTsS8_s");
 
         window.askAI = async (type) => {
@@ -143,13 +143,14 @@
             output.innerText = "Nexus réfléchit...";
 
             try {
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+                // Utilisation du modèle flash stable
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
                 let prompt = "";
-                if(type === 'infos') prompt = `Réalisateur et année du film "${title}". Réponds STRICTEMENT au format : Réalisateur : [Nom], Année : [Année].`;
-                if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte et passionnante sur le film "${title}".`;
-                if(type === 'style') prompt = `Analyse le style visuel et la mise en scène du film "${title}" en 3 points courts.`;
-                if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus élégant et professionnel : ${content}`;
+                if(type === 'infos') prompt = `Donne le réalisateur et l'année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
+                if(type === 'anecdote') prompt = `Raconte une anecdote de tournage courte sur le film "${title}".`;
+                if(type === 'style') prompt = `Analyse le style visuel de "${title}" en 3 points courts.`;
+                if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus professionnel : ${content}`;
 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
@@ -164,16 +165,18 @@
                         if(matchReal) document.getElementById('docDirector').value = matchReal[1].trim();
                         if(matchAnnee) document.getElementById('docYear').value = matchAnnee[1];
                     }
+                } else {
+                    output.innerText = "L'IA n'a pas pu générer de texte.";
                 }
             } catch (e) {
-                console.error(e);
-                output.innerText = "Erreur : Impossible de contacter l'IA. Vérifie ta clé API.";
+                console.error("Erreur IA:", e);
+                output.innerText = "Erreur de connexion. Vérifie ta clé ou ta connexion internet.";
             } finally {
                 loader.style.display = "none";
             }
         };
 
-        // --- RESTE DE LA LOGIQUE FIREBASE ---
+        // --- LOGIQUE FIREBASE & INTERFACE ---
         const urlParams = new URLSearchParams(window.location.search);
         const editId = urlParams.get('id');
         let hashedKey = "";
@@ -217,6 +220,7 @@
 
         window.loadImg = (input) => {
             const file = input.files[0];
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 document.getElementById('mainImg').src = e.target.result;
@@ -257,7 +261,7 @@
                 if(editId) await setDoc(doc(db, "cinedocs", editId), payload, { merge: true });
                 else await addDoc(collection(db, "cinedocs"), payload);
                 window.location.href = 'dashboard-redac.html';
-            } catch (e) { alert(e.message); }
+            } catch (e) { alert("Erreur lors de la sauvegarde : " + e.message); }
         };
     </script>
 </body>
