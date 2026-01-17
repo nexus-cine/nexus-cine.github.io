@@ -128,7 +128,6 @@
         const db = getFirestore(app);
 
         // --- CONFIGURATION IA DIRECTE ---
-        // Ta clé est maintenant intégrée
         const genAI = new GoogleGenerativeAI("AIzaSyAc9PLbbR1Nqf2m0UKzD4uKQD9OJTsS8_s");
 
         window.askAI = async (type) => {
@@ -143,8 +142,8 @@
             output.innerText = "Nexus réfléchit...";
 
             try {
-                // Utilisation du modèle flash stable
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                // Utilisation de la version 001 qui corrige l'erreur 404
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
                 let prompt = "";
                 if(type === 'infos') prompt = `Donne le réalisateur et l'année du film "${title}". Réponds au format strict : Réalisateur : [Nom], Année : [Année].`;
@@ -153,8 +152,7 @@
                 if(type === 'relire') prompt = `Reformule ce texte de critique cinéma pour le rendre plus professionnel : ${content}`;
 
                 const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
+                const text = result.response.text(); // Simplifié ici
 
                 if (text) {
                     output.innerText = text;
@@ -165,12 +163,10 @@
                         if(matchReal) document.getElementById('docDirector').value = matchReal[1].trim();
                         if(matchAnnee) document.getElementById('docYear').value = matchAnnee[1];
                     }
-                } else {
-                    output.innerText = "L'IA n'a pas pu générer de texte.";
                 }
             } catch (e) {
                 console.error("Erreur IA:", e);
-                output.innerText = "Erreur de connexion. Vérifie ta clé ou ta connexion internet.";
+                output.innerText = "Erreur : " + e.message;
             } finally {
                 loader.style.display = "none";
             }
